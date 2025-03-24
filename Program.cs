@@ -10,7 +10,7 @@ namespace DiscordTicketBotConsole
 {
     class Program
     {
-        // Define constants and variables
+
         private static DiscordSocketClient _client;
         private static Dictionary<ulong, DateTime> _lastTicketCreation = new Dictionary<ulong, DateTime>();
         private const string HELPER_ROLE_NAME = "Helper";
@@ -18,9 +18,9 @@ namespace DiscordTicketBotConsole
         private static int _totalTickets = 0;
         private const string TOKEN_FILE = "bot_token.txt";
         private const string TICKETS_LOG_FILE = "tickets.txt";
-        private const ulong LOG_CHANNEL_ID = LOG_CHANNEL_ID; // Updated log channel ID
-        private const ulong TICKET_CHANNEL_ID = TICKET_CHANNEL_ID; // Channel ID for ticket dropdown
-        private static bool _adminPanelSent = false; // Flag to track if admin panel has been sent
+        private const ulong LOG_CHANNEL_ID = LOG_CHANNEL_ID; 
+        private const ulong TICKET_CHANNEL_ID = TICKET_CHANNEL_ID;
+        private static bool _adminPanelSent = false;
 
         static async Task Main(string[] args)
         {
@@ -30,7 +30,7 @@ namespace DiscordTicketBotConsole
 
             await InitializeBotAsync();
 
-            // Graceful shutdown
+ 
             Console.CancelKeyPress += async (sender, e) =>
             {
                 e.Cancel = true;
@@ -39,7 +39,7 @@ namespace DiscordTicketBotConsole
                 Environment.Exit(0);
             };
 
-            // Keep the console app running
+
             while (true)
             {
                 await Task.Delay(1000);
@@ -94,13 +94,13 @@ namespace DiscordTicketBotConsole
         {
             if (message.Author.IsBot) return;
 
-            // Handle direct messages
+
             if (message.Channel is SocketDMChannel)
             {
                 await HandleDirectMessageAsync(message);
             }
 
-            // Log messages sent in ticket channels
+       
             if (message.Channel is SocketTextChannel textChannel && textChannel.Name.StartsWith("ticket-"))
             {
                 LogTicketMessage(message);
@@ -111,7 +111,7 @@ namespace DiscordTicketBotConsole
         {
             var user = message.Author;
 
-            // Check if the user is on cooldown
+
             if (_lastTicketCreation.TryGetValue(user.Id, out var lastCreationTime) && (DateTime.Now - lastCreationTime).TotalMinutes < 1)
             {
                 var timeRemaining = TimeSpan.FromMinutes(1) - (DateTime.Now - lastCreationTime);
@@ -119,7 +119,7 @@ namespace DiscordTicketBotConsole
                 return;
             }
 
-            // Create a dropdown menu for ticket creation
+
             var selectMenu = new SelectMenuBuilder()
                 .WithCustomId("ticket_reason")
                 .WithPlaceholder("Select a reason for your ticket")
@@ -211,7 +211,7 @@ namespace DiscordTicketBotConsole
 
         private static async Task HandleTicketReasonInteractionAsync(SocketMessageComponent componentInteraction)
         {
-            // Get the selected reason
+
             var selectedReason = componentInteraction.Data.Values.First();
             string reasonType = selectedReason switch
             {
@@ -221,13 +221,11 @@ namespace DiscordTicketBotConsole
                 _ => "Unknown"
             };
 
-            // Acknowledge the interaction
             await componentInteraction.DeferAsync();
 
-            // Create the ticket
+
             await CreateTicketAsync(componentInteraction.User, reasonType);
 
-            // Update the last ticket creation time
             _lastTicketCreation[componentInteraction.User.Id] = DateTime.Now;
         }
 
@@ -250,17 +248,17 @@ namespace DiscordTicketBotConsole
                     continue;
                 }
 
-                // Find or create the "Tickets" category
+
                 var ticketsCategory = guild.CategoryChannels.FirstOrDefault(c => c.Name == "Tickets");
                 if (ticketsCategory == null)
                 {
-                    // Create the category and fetch it as a SocketCategoryChannel
+        
                     var restCategory = await guild.CreateCategoryChannelAsync("Tickets");
-                    ticketsCategory = guild.GetCategoryChannel(restCategory.Id); // Fetch the category as a SocketCategoryChannel
+                    ticketsCategory = guild.GetCategoryChannel(restCategory.Id); 
                     Console.WriteLine($"Created 'Tickets' category in guild '{guild.Name}'.");
                 }
 
-                // Define permissions
+
                 var everyonePerms = new OverwritePermissions(viewChannel: PermValue.Deny);
                 var helperPerms = new OverwritePermissions(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow, attachFiles: PermValue.Allow);
                 var userPerms = new OverwritePermissions(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow, attachFiles: PermValue.Allow); // Allow user to send files
@@ -272,7 +270,7 @@ namespace DiscordTicketBotConsole
         {
             new Overwrite(guild.EveryoneRole.Id, PermissionTarget.Role, everyonePerms),
             new Overwrite(helperRole.Id, PermissionTarget.Role, helperPerms),
-            new Overwrite(user.Id, PermissionTarget.User, userPerms) // Allow the ticket creator to send files
+            new Overwrite(user.Id, PermissionTarget.User, userPerms) 
         };
 
                 if (minecraftManagerRole != null)
@@ -295,14 +293,14 @@ namespace DiscordTicketBotConsole
                     permissionOverwrites.Add(new Overwrite(owner.Id, PermissionTarget.User, ownerPerms));
                 }
 
-                // Create the ticket channel within the "Tickets" category
+          
                 var ticketChannel = await guild.CreateTextChannelAsync(ticketChannelName, properties =>
                 {
                     properties.PermissionOverwrites = permissionOverwrites;
                     properties.CategoryId = ticketsCategory.Id;
                 });
 
-                // Create the embedded message with ticket details
+     
                 var embed = new EmbedBuilder()
                     .WithTitle($"Ticket #{_totalTickets}")
                     .WithDescription($"**Ticket Created By:** {user.Mention}\n**Reason:** {reasonType}\n**Created At:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
@@ -333,18 +331,18 @@ namespace DiscordTicketBotConsole
 
                 await ticketChannel.SendMessageAsync($"{helperRole.Mention} - New ticket from {user.Mention}", embed: embed, components: component);
 
-                // Save ticket information to a file
+      
                 SaveTicketInfo(user, reasonType);
 
                 Console.WriteLine($"Ticket #{_totalTickets} created by {user.Username} with reason: {reasonType}");
 
-                // Notify the owner panel that a ticket was created
+          
                 NotifyOwnerPanel("A ticket was created!");
             }
         }
         private static void NotifyOwnerPanel(string message)
         {
-            // Write the notification message under the "Select an option:" prompt
+
             Console.WriteLine($"\n{message}");
             Console.Write("Select an option: ");
         }
@@ -365,11 +363,10 @@ namespace DiscordTicketBotConsole
                 return;
             }
 
-            // Grant the claiming helper exclusive permissions
+
             var helperPerms = new OverwritePermissions(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow);
             await ticketChannel.AddPermissionOverwriteAsync(guildUser, helperPerms);
 
-            // Remove send permissions for other helpers
             var helperRole = guildUser.Guild.Roles.FirstOrDefault(r => r.Name == HELPER_ROLE_NAME);
             if (helperRole != null)
             {
@@ -389,7 +386,7 @@ namespace DiscordTicketBotConsole
                 return;
             }
 
-            // Create a modal for the resolution message
+
             var modal = new ModalBuilder()
                 .WithCustomId("resolve_modal")
                 .WithTitle("Resolve Ticket")
@@ -410,15 +407,15 @@ namespace DiscordTicketBotConsole
                 return;
             }
 
-            // Send the resolution message to the user
-            var userMention = ticketChannel.Name.Split('-')[1]; // Extract username from channel name
+
+            var userMention = ticketChannel.Name.Split('-')[1]; 
             var user = _client.GetUser(userMention);
             if (user != null)
             {
                 await user.SendMessageAsync($"Your ticket has been resolved. Resolution: {resolutionMessage}");
             }
 
-            // Close the ticket
+
             await ticketChannel.SendMessageAsync("This ticket has been resolved and will be closed in 10 seconds.");
             await Task.Delay(10000);
 
@@ -450,13 +447,13 @@ namespace DiscordTicketBotConsole
                 return;
             }
 
-            // Defer the interaction to prevent errors
+
             await interaction.DeferAsync();
 
-            // Notify the user that the ticket is being closed
+
             await ticketChannel.SendMessageAsync("This ticket is being closed by staff. The channel will be deleted in 10 seconds.");
 
-            // Delay before deleting the channel
+
             await Task.Delay(10000);
 
             try
@@ -531,15 +528,15 @@ namespace DiscordTicketBotConsole
                     return;
                 }
 
-                // Check if the logs exceed 2000 characters
+
                 if (logs.Length <= 2000)
                 {
-                    // Send the logs as a message
+
                     await interaction.RespondAsync($"**Ticket Logs:**\n```{logs}```", ephemeral: true);
                 }
                 else
                 {
-                    // Send the logs as a file attachment
+
                     using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(logs)))
                     {
                         await interaction.RespondWithFileAsync(stream, "ticket_logs.txt", "Here are the ticket logs:", ephemeral: true);
@@ -570,15 +567,15 @@ namespace DiscordTicketBotConsole
                     return;
                 }
 
-                // Check if the logs exceed 2000 characters
+   
                 if (logs.Length <= 2000)
                 {
-                    // Send the logs as a message
+
                     await interaction.RespondAsync($"**Ticket Messages:**\n```{logs}```", ephemeral: true);
                 }
                 else
                 {
-                    // Send the logs as a file attachment
+    
                     using (var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(logs)))
                     {
                         await interaction.RespondWithFileAsync(stream, "ticket_messages.txt", "Here are the ticket messages:", ephemeral: true);
@@ -600,7 +597,7 @@ namespace DiscordTicketBotConsole
 
         private static async Task SendMessageToUserAsync(SocketMessageComponent interaction)
         {
-            // Create a modal for sending a message to a user
+
             var modal = new ModalBuilder()
                 .WithCustomId("send_message_modal")
                 .WithTitle("Send Message to User")
@@ -634,7 +631,7 @@ namespace DiscordTicketBotConsole
                 await user.SendMessageAsync(messageContent);
                 await modalInteraction.RespondAsync($"Message sent to {user.Username} (ID: {user.Id}).", ephemeral: true);
 
-                // Log the message in the log channel
+  
                 var logChannel = _client.GetChannel(LOG_CHANNEL_ID) as IMessageChannel;
                 if (logChannel != null)
                 {
@@ -675,32 +672,31 @@ namespace DiscordTicketBotConsole
 
         private static async Task ReadyAsync()
         {
-            // Clear the console
+
             Console.Clear();
 
-            // Display bot connection message
+
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Bot is ready and connected!");
             Console.ResetColor();
 
-            // Set bot activity
+ 
             await _client.SetActivityAsync(new Game("Managing tickets"));
 
-            // Send the admin panel to the log channel
             await SendAdminPanelAsync();
 
-            // Run the owner panel on a separate thread to avoid blocking the gateway
+
             _ = Task.Run(() => ShowOwnerPanelAsync());
         }
 
         private static async Task OnDisconnectedAsync(Exception exception)
         {
-            // Change console text color to red
+
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Bot has disconnected.");
             Console.ResetColor();
 
-            // Log the disconnection reason
+
             Console.WriteLine($"Disconnection reason: {exception?.Message}");
         }
 
@@ -708,7 +704,7 @@ namespace DiscordTicketBotConsole
         {
             while (true)
             {
-                // Clear the console and display the title
+
                 Console.Clear();
                 Console.Title = "Echo Ticket Tool";
                 Console.WriteLine("        ");
@@ -730,12 +726,12 @@ namespace DiscordTicketBotConsole
                 Console.WriteLine("                                     ░░░██║░░░╚█████╔╝╚█████╔╝███████╗");
                 Console.WriteLine("                                     ░░░╚═╝░░░░╚════╝░░╚════╝░╚══════╝");
 
-                // Display "Bot is ready and connected!" below the title
+    
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("                                     Bot is ready and connected!");
                 Console.ResetColor();
 
-                // Display "Owner Panel" in red
+             
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("                                     === Owner Panel ===");
                 Console.ResetColor();
@@ -772,7 +768,7 @@ namespace DiscordTicketBotConsole
                         break;
 
                     case "6":
-                        await SendAdminPanelAsync(); // Call the method to resend the admin panel
+                        await SendAdminPanelAsync(); 
                         Console.WriteLine("Admin panel resent.");
                         break;
 
@@ -781,7 +777,7 @@ namespace DiscordTicketBotConsole
                         break;
                 }
 
-                // Wait for user input before clearing the console and re-displaying the menu
+         
                 Console.WriteLine("\nPress any key to continue...");
                 Console.ReadKey();
             }
@@ -812,10 +808,10 @@ namespace DiscordTicketBotConsole
                 return;
             }
 
-            // Send the message to the user
+
             await user.SendMessageAsync(message);
 
-            // Send the message to the log channel
+
             var logChannel = _client.GetChannel(LOG_CHANNEL_ID) as IMessageChannel;
             if (logChannel != null)
             {
@@ -848,7 +844,6 @@ namespace DiscordTicketBotConsole
                 return;
             }
 
-            // Create the dropdown menu for ticket creation
             var selectMenu = new SelectMenuBuilder()
                 .WithCustomId("ticket_reason")
                 .WithPlaceholder("Select a reason for your ticket")
@@ -860,7 +855,7 @@ namespace DiscordTicketBotConsole
                 .WithSelectMenu(selectMenu)
                 .Build();
 
-            // Create the embedded message with ticket details
+
             var embed = new EmbedBuilder()
                 .WithTitle("Echo Tickets")
                 .WithDescription("Please select a reason for creating a ticket from the dropdown menu below.")
